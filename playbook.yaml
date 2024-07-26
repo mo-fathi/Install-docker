@@ -1,0 +1,53 @@
+---
+- name: Install Docker on a linux host
+  hosts: webservers
+
+  tasks:
+  - name: Uninstall docker dependencies
+    shell: "for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done"
+    ignore_errors: true
+  
+  - name: Install ca-certificates and curl 
+    ansible.builtin.apt:
+      pkg:
+      - curl
+      - ca-certificates
+      - python3-pip
+      update_cache: yes
+  
+  - name: Add Docker GPG apt Key
+    ansible.builtin.apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    ansible.builtin.apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Install docker and its dependencies
+    ansible.builtin.apt:
+      pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      update_cache: yes
+
+  - name: Install Docker Module for Python
+    pip:
+      name: docker
+
+  - name: run docker hello-world
+    shell: "docker run hello-world"
+    register: running_result
+  - name: show running result
+    ansible.builtin.debug:
+      msg: "{{ running_result }}"
+
+  ### find the problem of this task
+  # - name: Validating installation by running hello-world container
+  #   docker_container:
+  #     name: hello
+  #     image: hello-world
